@@ -12,7 +12,7 @@ do
     echo $string
     CUDA_VISIBLE_DEVICES=$((i)) python main.py \
     --model bigcode/starcoder --use_auth_token \
-    --trust_remote_code --tasks humaneval --batch_size 10 --n_samples 20 \
+    --trust_remote_code --tasks humaneval --batch_size 20 --n_samples 20 \
     --max_length_generation 1024 --precision bf16 \
     --save_generations --save_generations_path ./generations/starcoder_humaneval_generations_$((i*SIZE/GPUS)).json \
     --start $((i*SIZE/GPUS)) --end $((ip*SIZE/GPUS)) &

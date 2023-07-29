@@ -13,7 +13,7 @@ We support [starcoder](https://huggingface.co/bigcode/starcoder) and [codegen2.5
 ## Inference
 Performing inference for code generation datasets is challenging since computing `pass@k` metric requires multiple samples per example (`n_samples`). For example, performaing inference over the entire humaneval dataset (164 problems) (with `n_samples` = 20) takes about 25 minutes on 8 A100 (40 GB) GPUs. 
 
-We use [`vllm`](https://vllm.readthedocs.io/en/latest/index.html) for blazing fast inference in this repository! We have provided example inference script for `starcoder` and `santacoder` models in `inference` folder. We are able to speed up the inference by 2x using `vllm` and expect significantly more speedup for longer sequence lengths.
+We use [`vllm`](https://vllm.readthedocs.io/en/latest/index.html) for blazing fast inference in this repository! We have provided example inference script for `starcoder` and `santacoder` models in `inference` folder. We are able to speed up the inference by **3 times** using `vllm` and expect significantly more speedup for longer sequence lengths. The `inference/scripts` folder depicts examples for performing inference on humaneval dataset for `starcoder` and `santacoder` models.
 
 ## Evaluation
 We use `bigcode-evaluation-harness` for performing our evaluation. The inference step above generates the data in the appropirate format as expected by the harness. To perform evaluation on the humaneval dataset follow the script below
