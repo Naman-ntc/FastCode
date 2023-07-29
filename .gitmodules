@@ -1,0 +1,3 @@
+[submodule "evaluation/bigcode-evaluation-harness"]
+	path = evaluation/bigcode-evaluation-harness
+	url = https://github.com/Naman-ntc/bigcode-evaluation-harness

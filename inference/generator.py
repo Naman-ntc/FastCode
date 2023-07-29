@@ -1,0 +1,62 @@
+import sys
+from math import ceil
+
+from vllm import SamplingParams
+from torch.utils.data import DataLoader
+
+from utils import TokenizedDataset, complete_code
+
+
+sys.path.append("../evaluation/bigcode-evaluation-harness")
+from lm_eval import tasks
+
+
+class Generator:
+    def __init__(self, model, tokenizer, args):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.args = args
+    
+    def generate(self, task_name):
+        task = tasks.get_task(task_name)
+        dataset = task.get_dataset()
+        # import pdb; pdb.set_trace()
+        dataset_slice = dataset.select(range(self.args.start, self.args.end))
+
+        n_tasks=dataset_slice.num_rows
+
+        ds_tokenized = TokenizedDataset(
+            task,
+            dataset_slice,
+            self.tokenizer,
+            max_length=self.args.max_length_generation,
+            n_tasks=n_tasks,
+            n_copies = ceil(self.args.n_samples / self.args.batch_size),
+            prefix=self.args.prefix,
+        )
+
+        sampling_params = SamplingParams(
+            n=self.args.batch_size,
+            temperature=self.args.temperature,
+            top_p=self.args.top_p,
+            top_k=self.args.top_k,
+            max_tokens=self.args.max_length_generation,
+            stop=task.stop_words,
+        )
+
+        ds_loader = DataLoader(ds_tokenized, batch_size=1)
+
+        generations = complete_code(
+            self.model,
+            sampling_params,
+            ds_loader,
+            self.args.batch_size,
+            n_tasks
+        )
+
+        references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
+        if len(generations[0]) > self.args.n_samples:
+            generations = [l[: self.args.n_samples] for l in generations]
+
+        return generations, references
+
