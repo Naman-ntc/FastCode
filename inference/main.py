@@ -91,10 +91,10 @@ def parse_args():
         help="Randomize the dataset before evaluation (useful for distributed inference)",
     )
     parser.add_argument(
-        "--n_limit",
+        "--limit",
         type=int,
         default=None,
-        help="Only solve the first n_limit samples in the benchmark (useful with randomize dataset)",
+        help="Only solve the first limit samples in the benchmark (useful with randomize dataset)",
     )
     parser.add_argument(
         "--start",
