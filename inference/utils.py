@@ -76,18 +76,19 @@ def complete_code(
     prefix="",
     postprocess=True,
 ):
+    max_length_generation = sampling_params.max_tokens
     code_gens = defaultdict(list)
     total = math.ceil(n_tasks * dataloader.dataset.n_copies)
     for step, batch in tqdm(enumerate(dataloader), total=total):
         inputs = batch["ids"][:, : batch["input_len"]].tolist()
         num_tokens = len(inputs[0])
-        if sampling_params.max_tokens - num_tokens < 0:
+        if max_length_generation - num_tokens < 0:
             code_gens[int(batch["row_index"][0])].extend([""] * batch_size)
             warnings.warn(
-                f"Skipping task {batch['row_index'][0]} because it is too long"
+                f"Skipping task {batch['row_index'][0]} because it is too long -- [{max_length_generation=}|{num_tokens=}]"
             )
             continue
-        sampling_params.max_tokens = sampling_params.max_tokens - num_tokens
+        sampling_params.max_tokens = max_length_generation - num_tokens
         outputs = model.generate(prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False)
 
         generated_tasks = batch["row_index"].repeat(batch_size)
