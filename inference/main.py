@@ -86,9 +86,9 @@ def parse_args():
         help="Model precision, from: fp32, fp16 or bf16",
     )
     parser.add_argument(
-        "--randomize",
+        "--shuffle",
         action="store_true",
-        help="Randomize the dataset before evaluation (useful for distributed inference)",
+        help="Shuffle the dataset before evaluation (useful for distributed inference)",
     )
     parser.add_argument(
         "--limit",
