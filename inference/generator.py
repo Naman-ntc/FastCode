@@ -60,6 +60,7 @@ class Generator:
         ds_loader = DataLoader(ds_tokenized, batch_size=1)
 
         generations = complete_code(
+            task,
             self.model,
             sampling_params,
             ds_loader,

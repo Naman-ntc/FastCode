@@ -67,6 +67,7 @@ class TokenizedDataset(IterableDataset):
 
 
 def complete_code(
+    task,
     model,
     sampling_params,
     dataloader,
