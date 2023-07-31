@@ -82,6 +82,9 @@ def complete_code(
         num_tokens = len(inputs[0])
         if sampling_params.max_tokens - num_tokens < 0:
             code_gens[int(batch["row_index"][0])].extend([""] * batch_size)
+            warnings.warn(
+                f"Skipping task {batch['row_index'][0]} because it is too long"
+            )
             continue
         sampling_params.max_tokens = sampling_params.max_tokens - num_tokens
         outputs = model.generate(prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False)
@@ -93,6 +96,8 @@ def complete_code(
         ]
 
         for task, text in zip(generated_tasks, combined_texts):
+            if postprocess:
+                text = task.postprocess_generation(text, int(task.item()))
             code_gens[int(task.item())].append(text)
     
     return code_gens
