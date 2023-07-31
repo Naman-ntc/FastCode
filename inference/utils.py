@@ -58,9 +58,9 @@ class TokenizedDataset(IterableDataset):
         for sample in range(self.n_tasks):
             for _ in range(self.n_copies):
                 yield {
+                    "row_index": row_idxs[sample],
                     "prompt": prompts[sample],
                     "ids": outputs.input_ids[sample],
-                    "task_id": sample,
                     "input_len": outputs.attention_mask[sample].sum(),
                 }
 
