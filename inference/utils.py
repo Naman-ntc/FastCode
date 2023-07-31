@@ -35,13 +35,14 @@ class TokenizedDataset(IterableDataset):
 
     def __iter__(self):
         prompts = []
-        infill = []
-        instruction = []
+        row_idxs = []
         for sample in range(self.n_tasks):
-            prompt_contents = self.task.get_prompt(self.dataset[sample])
+            dataset_sample = self.dataset[sample]
+            prompt_contents = self.task.get_prompt(dataset_sample)
             assert isinstance(prompt_contents, str)
             prompt = self.prefix + prompt_contents
             prompts.append(prompt)
+            row_idxs.append(dataset_sample["row_index"])
 
         return_token_type_ids = None  # default
 
