@@ -11,7 +11,7 @@ We support [starcoder](https://huggingface.co/bigcode/starcoder) and [codegen2.5
 `finetune/scripts` contains scripts for fine-tuning models on the code generation tasks for different models and different GPUs. We have optimized the training arguments for optimized performance for `V100`, `A6000`, and `A100` GPUs. [finetune/README.md](finetune/README.md) also contains training performance benchmarked across the different GPUs.
 
 ## Inference
-Performing inference for code generation datasets is challenging since computing `pass@k` metric requires multiple samples per example (`n_samples`). For example, performaing inference over the entire humaneval dataset (164 problems) (with `n_samples` = 20) takes about 25 minutes on 8 A100 (40 GB) GPUs. 
+Performing inference for code generation datasets is challenging since computing `pass@k` metric requires multiple samples per example (`n_samples`). For example, performing inference over the entire humaneval dataset (164 problems) (with `n_samples` = 20) takes about 25 minutes on 8 A100 (40 GB) GPUs. 
 
 We use [`vllm`](https://vllm.readthedocs.io/en/latest/index.html) for blazing fast inference in this repository! We have provided example inference script for `starcoder` and `santacoder` models in `inference` folder. We are able to speed up the inference by **3 times** using `vllm` and expect significantly more speedup for longer sequence lengths. The `inference/scripts` folder depicts examples for performing inference on humaneval dataset for `starcoder` and `santacoder` models.
 

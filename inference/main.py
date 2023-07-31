@@ -1,12 +1,14 @@
 import sys
 import json
+import random
 import fnmatch
 
-import datasets
 import torch
+import datasets
+import numpy as np
 import transformers
+from vllm import LLM
 from transformers import HfArgumentParser, AutoTokenizer
-from vllm import LLM, SamplingParams
 
 from generator import Generator
 from generation_arguments import EvalArguments
@@ -84,6 +86,17 @@ def parse_args():
         help="Model precision, from: fp32, fp16 or bf16",
     )
     parser.add_argument(
+        "--randomize",
+        action="store_true",
+        help="Randomize the dataset before evaluation (useful for distributed inference)",
+    )
+    parser.add_argument(
+        "--n_limit",
+        type=int,
+        default=None,
+        help="Only solve the first n_limit samples in the benchmark (useful with randomize dataset)",
+    )
+    parser.add_argument(
         "--start",
         type=int,
         default=0,
@@ -151,6 +164,9 @@ def pattern_match(patterns, source_list):
 
 def main():
     args = parse_args()
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
 

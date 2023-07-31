@@ -15,7 +15,7 @@ do
     --trust_remote_code --tasks humaneval --batch_size 20 --n_samples 20 \
     --max_length_generation 1024 --precision bf16 \
     --save_generations --save_generations_path ./generations/starcoder_humaneval_generations_$((i*SIZE/GPUS)).json \
-    --start $((i*SIZE/GPUS)) --end $((ip*SIZE/GPUS)) &
+    --start $((i*SIZE/GPUS)) --end $((ip*SIZE/GPUS)) --randomize &
     
     pids+=($!)
 

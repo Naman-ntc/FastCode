@@ -74,20 +74,24 @@ def complete_code(
     prefix="",
     postprocess=True,
 ):
-
-    code_gens = [[] for _ in range(n_tasks)]
+    code_gens = defaultdict(list)
     total = math.ceil(n_tasks * dataloader.dataset.n_copies)
     for step, batch in tqdm(enumerate(dataloader), total=total):
         inputs = batch["ids"][:, : batch["input_len"]].tolist()
+        num_tokens = len(inputs[0])
+        if sampling_params.max_tokens - num_tokens < 0:
+            code_gens[int(batch["row_index"][0])].extend([""] * batch_size)
+            continue
+        sampling_params.max_tokens = sampling_params.max_tokens - num_tokens
         outputs = model.generate(prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False)
 
-        generated_tasks = batch["task_id"].repeat(batch_size)
+        generated_tasks = batch["row_index"].repeat(batch_size)
         generated_texts = [o.text for o in outputs[0].outputs]
         combined_texts = [
             batch["prompt"][0] + generated_text for generated_text in generated_texts
         ]
 
         for task, text in zip(generated_tasks, combined_texts):
-            code_gens[task].append(text)
+            code_gens[int(task.item())].append(text)
     
     return code_gens

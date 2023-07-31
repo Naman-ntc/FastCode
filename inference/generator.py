@@ -1,6 +1,7 @@
 import sys
 from math import ceil
 
+import numpy as np
 from vllm import SamplingParams
 from torch.utils.data import DataLoader
 
@@ -20,8 +21,20 @@ class Generator:
     def generate(self, task_name):
         task = tasks.get_task(task_name)
         dataset = task.get_dataset()
-        # import pdb; pdb.set_trace()
+
+        dataset_rows = range(dataset.num_rows)
+        dataset = dataset.add_column("row_index", dataset_rows)
+
+        if self.args.n_limit is not None:
+            dataset = dataset.select(range(self.args.n_limit))
+        
+        # shuffle the dataset
+        if self.args.shuffle:
+            dataset_rows = np.random.permutation(dataset_rows)
+            dataset = dataset.select(dataset_rows)
+        
         dataset_slice = dataset.select(range(self.args.start, self.args.end))
+
 
         n_tasks=dataset_slice.num_rows
 
@@ -55,8 +68,10 @@ class Generator:
         )
 
         references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
-        if len(generations[0]) > self.args.n_samples:
-            generations = [l[: self.args.n_samples] for l in generations]
+
+        if len(list(generations.values())[0]) > self.args.n_samples:
+            generations = {k: v[:self.args.n_samples] for k, v in generations.items()}
+        assert all([len(gen) == self.args.n_samples for gen in generations.values()]), f"{[len(gen) for gen in generations.values()]}"
 
         return generations, references
 
