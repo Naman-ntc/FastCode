@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p generations
+
 SIZE=164
 GPUS=8
 
