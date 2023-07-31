@@ -25,8 +25,8 @@ class Generator:
         dataset_rows = range(dataset.num_rows)
         dataset = dataset.add_column("row_index", dataset_rows)
 
-        if self.args.n_limit is not None:
-            dataset = dataset.select(range(self.args.n_limit))
+        if self.args.limit is not None:
+            dataset = dataset.select(range(self.args.limit))
         
         # shuffle the dataset
         if self.args.shuffle:
