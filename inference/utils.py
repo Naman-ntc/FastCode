@@ -96,9 +96,10 @@ def complete_code(
             batch["prompt"][0] + generated_text for generated_text in generated_texts
         ]
 
-        for task, text in zip(generated_tasks, combined_texts):
+        for task_idx, text in zip(generated_tasks, combined_texts):
+            task_idx = int(task_idx.item())
             if postprocess:
-                text = task.postprocess_generation(text, int(task.item()))
-            code_gens[int(task.item())].append(text)
+                text = task.postprocess_generation(text, task_idx)
+            code_gens[task_idx].append(text)
     
     return code_gens
