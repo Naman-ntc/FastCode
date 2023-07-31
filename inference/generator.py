@@ -22,12 +22,12 @@ class Generator:
         task = tasks.get_task(task_name)
         dataset = task.get_dataset()
 
+        if self.args.limit is not None:
+            dataset = dataset.select(range(self.args.limit))
+
         dataset_rows = range(dataset.num_rows)
         dataset = dataset.add_column("row_index", dataset_rows)
 
-        if self.args.limit is not None:
-            dataset = dataset.select(range(self.args.limit))
-        
         # shuffle the dataset
         if self.args.shuffle:
             dataset_rows = np.random.permutation(dataset_rows)
