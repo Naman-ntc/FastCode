@@ -1,4 +1,4 @@
-torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 apps_monkeypatch_trainer.py \
+torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch_trainer.py \
     --model_name_or_path bigcode/gpt_bigcode-santacoder \
     --low_cpu_mem_usage True \
     --use_xformer_attn True \

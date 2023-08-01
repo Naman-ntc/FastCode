@@ -57,7 +57,8 @@ from transformers.utils.versions import require_version
 
 
 from apps_dataset import APPSDataset
-from apps_arguments import ModelArguments, APPSDataArguments, ModelSpecificArguments
+from model_arguments import ModelArguments, ModelSpecificArguments
+from apps_data_arguments import  APPSDataArguments
 
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
 
