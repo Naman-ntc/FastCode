@@ -33,6 +33,9 @@ class Generator:
             dataset_rows = np.random.permutation(dataset_rows)
             dataset = dataset.select(dataset_rows)
         
+        if self.args.end is None:
+            self.args.end = dataset.num_rows
+
         dataset_slice = dataset.select(range(self.args.start, self.args.end))
 
 
