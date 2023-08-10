@@ -28,8 +28,9 @@ python main.py --tasks humaneval --allow_code_execution --n_samples {n} --limit 
 ## Roadmap
 
 - [x] Improve inference scripts further to use GPUs more efficiently
-- [ ] Add more examples and training/inference details
-- [ ] Add more optimized fine-tuning scripts
+- [ ] Add lora and quantization finetuning support
+- [ ] Add more training benchmarking details
+- [ ] Support FlashAttention for BigCode models
 
 ## Citation
 If you find this repository useful, please cite this as
