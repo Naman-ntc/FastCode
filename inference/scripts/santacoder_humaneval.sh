@@ -6,6 +6,8 @@ SIZE=164
 GPUS=8
 
 pids=()
+filename_prefix="santacoder_humaneval_generations"
+file_names=""
 
 for i in $(seq 0 $((GPUS-1)))
 do
@@ -16,11 +18,12 @@ do
     --model bigcode/gpt_bigcode-santacoder --use_auth_token \
     --trust_remote_code --tasks humaneval --batch_size 20 --n_samples 20 \
     --max_length_generation 1024 --precision bf16 --limit $SIZE \
-    --save_generations --save_generations_path ./generations/santacoder_humaneval_generations_$((i*SIZE/GPUS)).json \
+    --save_generations --save_generations_path ./generations/$filename_prefix_$((i*SIZE/GPUS)).json \
     --start $((i*SIZE/GPUS)) --end $((ip*SIZE/GPUS)) --shuffle &
     
     pids+=($!)
 
+    file_names="$file_names ./generations/$filename_prefix_$((i*SIZE/GPUS)).json"
 done
 
 echo "Spawned all processes with pids: "
@@ -30,10 +33,4 @@ for pid in ${pids[*]}; do
     wait $pid
 done
 
-file_names=""
-for i in $(seq 0 $((GPUS-1)))
-do
-    file_names="$file_names ./generations/santacoder_humaneval_generations_$((i*SIZE/GPUS)).json"
-done
-
-python combine_generations.py $file_names ./generations/santacoder_humaneval_generations.json
+python combine_generations.py $file_names ./generations/$filename_prefix.json
