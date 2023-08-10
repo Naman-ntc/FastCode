@@ -27,7 +27,7 @@ do
 done
 
 echo "Spawned all processes with pids: "
-echo $pids
+echo ${pids[*]}
 
 for pid in ${pids[*]}; do
     wait $pid
