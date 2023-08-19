@@ -15,7 +15,7 @@ from einops import rearrange
 import xformers.ops as xops
 
 try:
-    from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
+    from flash_attn.flash_attn_interface import flash_attn_func, flash_attn_varlen_qkvpacked_func
     from flash_attn.bert_padding import unpad_input, pad_input
 except ImportError:
     logging.warning("flash_attn not installed")
@@ -164,6 +164,16 @@ def _prepare_decoder_attention_mask_llama(
     # [bsz, seq_len]
     return attention_mask
 
+def bigcode_fa_new_attn(self, query, key, value, attention_mask=None, head_mask=None):
+    bsz, q_len, _ = query.shape
+    key = key.transpose(-1,-2)[:,:,None,:]
+    value = value[:,:,None,:]
+    query = query.reshape(bsz, q_len, self.num_heads, self.head_dim)
+    attn_output = flash_attn_func(query, key, value, dropout_p=self.attn_dropout.p, softmax_scale=None, causal=True)
+    attn_output = attn_output.reshape(attn_output.shape[0], attn_output.shape[1], self.num_heads*self.head_dim)
+    return attn_output, None
+    
+
 def bigcode_xformer_new_attn(self, query, key, value, attention_mask=None, head_mask=None):    
     key = key.transpose(-1,-2)[:,:,None,:]
     value = value[:,:,None,:]
@@ -191,7 +201,8 @@ def replace_attn_with_flash_attn():
         _prepare_decoder_attention_mask_llama
     )
     transformers.models.llama.modeling_llama.LlamaAttention.forward = llama_fa_forward
-
+    transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = bigcode_fa_new_attn
+    
 def replace_attn_with_xformer():
     transformers.models.llama.modeling_llama.LlamaAttention.forward = llama_xformer_forward
     transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = bigcode_xformer_new_attn
