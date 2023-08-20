@@ -1,7 +1,7 @@
 torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch_trainer.py \
     --model_name_or_path bigcode/starcoderbase-3b \
     --low_cpu_mem_usage True \
-    --use_flash_attn True \
+    --use_xformer_attn True \
     --bf16 True \
     --tf32 True \
     --output_dir checkpoints_starcoder3b_small_data_ebs_256_lr_5e5 \
