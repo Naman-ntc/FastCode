@@ -1,14 +1,14 @@
 torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch_trainer.py \
-    --model_name_or_path Salesforce/codegen25-7b-mono \
+    --model_name_or_path Salesforce/codegen25-7b-instruct \
     --low_cpu_mem_usage True \
-    --use_xformer_attn True \
+    --use_flash_attn True \
     --bf16 True \
     --tf32 True \
     --output_dir checkpoints_codegen25_small_data_ebs_256_lr_5e5 \
     --num_train_epochs 16 \
     --gradient_checkpointing True \
     --gradient_accumulation_steps 16 \
-    --per_device_train_batch_size 1 \
+    --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
     --save_strategy "steps" \
     --save_steps 100 \
@@ -21,10 +21,10 @@ torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch
     --lr_scheduler_type "cosine" \
     --logging_steps 5 \
     --block_size 2048 \
-    --report_to wandb \
+    --report_to none \
     --run_name fastcode_codegen25_no_fn_ebs_256_lr_5e-5_ep_16 \
     --do_train \
     --do_eval \
-    --deepspeed ds_config_zero3.json \
-    # --fsdp "full_shard auto_wrap" \
-    # --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    # --deepspeed ds_config_zero3.json \
