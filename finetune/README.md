@@ -28,7 +28,9 @@ We compare the performance of the default attention implementation with xformer 
 |starcoder-7b | Default*** | 91.3s |
 
 <sup>*</sup>xformer and flash attention supported turning gradient checkpointing off while default attention required gradient checkpointing to be on.
+
 <sup>**</sup>xformer and flash attention supported batch size of 8 while default attention only supported batch size 4 (FSDP enabled).
+
 <sup>***</sup>xformer and flash attention supported batch size of 2 while default attention only supported batch size 1 (FSDP enabled).
 
 Note that flash attention is underperforming for the larger 7b model. We will look into this and recommend using xformer in the meantime!
