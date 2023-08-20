@@ -18,12 +18,12 @@ do
     --model bigcode/starcoder --use_auth_token \
     --trust_remote_code --tasks humaneval --batch_size 20 --n_samples 20 \
     --max_length_generation 1024 --precision bf16 --limit $SIZE \
-    --save_generations --save_generations_path ./generations/$filename_prefix_$((i*SIZE/GPUS)).json \
+    --save_generations --save_generations_path ./generations/${filename_prefix}_$((i*SIZE/GPUS)).json \
     --start $((i*SIZE/GPUS)) --end $((ip*SIZE/GPUS)) --shuffle &
-
-    pids+=($!)
     
-    file_names="$file_names ./generations/$filename_prefix_$((i*SIZE/GPUS)).json"
+    pids+=($!)
+
+    file_names="$file_names ./generations/${filename_prefix}_$((i*SIZE/GPUS)).json"
 
 done
 
@@ -34,4 +34,4 @@ for pid in ${pids[*]}; do
     wait $pid
 done
 
-python combine_generations.py $file_names ./generations/$filename_prefix.json
+python combine_generations.py $file_names ./generations/${filename_prefix}.json
