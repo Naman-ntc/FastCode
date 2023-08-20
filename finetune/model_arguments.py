@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 from typing import Optional
+from dataclasses import dataclass, field
 
 @dataclass
 class ModelArguments:
@@ -77,8 +77,6 @@ class ModelArguments:
         },
     )
 
-    
-
 @dataclass
 class ModelSpecificArguments:
     """
@@ -120,3 +118,30 @@ class ModelSpecificArguments:
             )
         },
     )
+
+@dataclass
+class LoraArguments:
+    use_lora: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Use LoRA performance efficient fine-tuning."
+            )
+        },
+    )
+    q_lora: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Use QLoRA performance efficient fine-tuning."
+            )
+        }
+    )
+    lora_r: int = 8
+    lora_alpha: int = 16
+    lora_dropout: float = 0.05
+    lora_target_modules: list[str] = field(
+        default_factory=lambda: ["c_proj", "c_attn", "q_attn"]
+    )
+    lora_weight_path: str = ""
+    lora_bias: str = "none"

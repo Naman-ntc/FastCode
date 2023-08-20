@@ -4,8 +4,13 @@ FastCode is a powerful set of utilities aimed to enhance the training, inference
 
 FastCode integrates smoothly with prominent models such as [starcoder](https://huggingface.co/bigcode/starcoder) and [codegen2.5](https://huggingface.co/Salesforce/codegen25-7b-mono), and also provides a robust and simplified pipeline for evaluation using the bigcode-evaluation-harness! The training scripts have been benchmarked and configured for different devices (`V100`, `A6000` and `A100`).
 
-## Installation
-We recommend using python version 3.8 or higher, CUDA version between 11.0 and 11.8 and GPUs with capability 7.0 or higher. To install, you can simply run `./setup.sh` which will install all the dependencies.
+## Setup and Installation
+To clone the repository, run
+```
+git clone https://github.com/Naman-ntc/FastCode.git --recursive
+```
+
+For installations, we recommend using python version 3.8 or higher, CUDA version between 11.0 and 11.8 and GPUs with capability 7.0 or higher. To install, you can simply run `./setup.sh` which will install all the dependencies.
 
 ## FineTuning
 We support [starcoder](https://huggingface.co/bigcode/starcoder) and [codegen2.5](https://huggingface.co/Salesforce/codegen25-7b-mono) family of models currently. We have implemented efficient attention implementations like flash-attention and memory-efficient-attention.
@@ -28,9 +33,12 @@ python main.py --tasks humaneval --allow_code_execution --n_samples {n} --limit 
 ## Roadmap
 
 - [x] Improve inference scripts further to use GPUs more efficiently
-- [ ] Add lora and quantization finetuning support
-- [ ] Add more training benchmarking details
-- [ ] Support FlashAttention for BigCode models
+- [x] Add lora finetuning support
+- [x] Add finetuning performance benchmarks for attention and lora
+- [x] Support FlashAttention for BigCode models
+- [] Add finetuning performance benchmarks for larger models
+- [] Add quantized model training support
+- [] Add quantized model inference support
 
 ## Citation
 If you find this repository useful, please cite this as

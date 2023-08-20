@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 import torch
 import transformers
 from torch import nn
+from peft.tuners.lora import LoraLayer
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb
 
 from einops import rearrange
@@ -165,6 +166,12 @@ def _prepare_decoder_attention_mask_llama(
     return attention_mask
 
 def bigcode_fa_new_attn(self, query, key, value, attention_mask=None, head_mask=None):
+    ## require for lora -- need fix?
+    query = query.to(torch.bfloat16)
+    key = key.to(torch.bfloat16)
+    value = value.to(torch.bfloat16)
+
+    ## flash attention
     bsz, q_len, _ = query.shape
     key = key.transpose(-1,-2)[:,:,None,:]
     value = value[:,:,None,:]
@@ -175,6 +182,12 @@ def bigcode_fa_new_attn(self, query, key, value, attention_mask=None, head_mask=
     
 
 def bigcode_xformer_new_attn(self, query, key, value, attention_mask=None, head_mask=None):    
+    ## require for lora -- need fix in c_attn?
+    query = query.to(torch.bfloat16)
+    key = key.to(torch.bfloat16)
+    value = value.to(torch.bfloat16)
+
+    # xformer attention
     key = key.transpose(-1,-2)[:,:,None,:]
     value = value[:,:,None,:]
     query = query.reshape(query.shape[0], query.shape[1], self.num_heads, self.head_dim)
@@ -187,9 +200,6 @@ def bigcode_xformer_new_attn(self, query, key, value, attention_mask=None, head_
 
 def replace_attn_with_flash_attn():
     cuda_major, cuda_minor = torch.cuda.get_device_capability()
-    logging.warning(
-        "Flash attention is not implemented for GPTBigCode models yet. Please use xformers"
-    )
     if cuda_major < 8:
         logging.warning(
             "Flash attention is only supported on A100 or H100 GPU during training due to head dim > 64 backward."
@@ -206,3 +216,21 @@ def replace_attn_with_flash_attn():
 def replace_attn_with_xformer():
     transformers.models.llama.modeling_llama.LlamaAttention.forward = llama_xformer_forward
     transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = bigcode_xformer_new_attn
+
+
+def upcast_layer_for_flash_attention(model, torch_dtype):
+    # LlamaRMSNorm layers are in fp32 after kbit_training, so we need to
+    # convert them back to fp16/bf16 for flash-attn compatibility.
+    for name, module in model.named_modules():
+        if isinstance(module, LoraLayer):
+            module.to(torch_dtype)
+        if "norm" in name or "ln_" in name:
+            module.to(torch_dtype)
+        if "lm_head" in name or "embed_tokens" in name:
+            if hasattr(module, "weight"):
+                module.to(torch_dtype)
+        if "c_attn" in name or "q_attn" in name or "c_proj" in name or "c_fc" in name:
+            if hasattr(module, "weight"):
+                module.to(torch_dtype)
+
+    return model

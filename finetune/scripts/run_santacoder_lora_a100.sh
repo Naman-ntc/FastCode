@@ -25,3 +25,6 @@ torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch
     --run_name fastcode_santa_no_fn_ebs_256_lr_5e-5_ep_16 \
     --do_train \
     --do_eval \
+    --use_lora \
+    --lora_r 8 \
+    --lora_alpha 16 \

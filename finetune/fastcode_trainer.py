@@ -54,19 +54,16 @@ from transformers.testing_utils import CaptureLogger
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
-
+from peft import LoraConfig, get_peft_model
 
 from apps_dataset import APPSDataset
-from model_arguments import ModelArguments, ModelSpecificArguments
+from utils import print_trainable_parameters
 from apps_data_arguments import  APPSDataArguments
+from model_arguments import ModelArguments, ModelSpecificArguments, LoraArguments
 
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
 
 logger = logging.getLogger(__name__)
-
-
-
-
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
     """Collects the state dict and dump to disk."""
@@ -76,21 +73,19 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
-
-
 def main():
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    parser = HfArgumentParser((ModelArguments, ModelSpecificArguments, APPSDataArguments, TrainingArguments))
+    parser = HfArgumentParser((ModelArguments, ModelSpecificArguments, LoraArguments, APPSDataArguments, TrainingArguments))
 
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
-        model_args, model_specific_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        model_args, model_specific_args, lora_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else:
-        model_args, model_specific_args, data_args, training_args = parser.parse_args_into_dataclasses()
+        model_args, model_specific_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -166,10 +161,10 @@ def main():
         config.scale_attention_softmax_in_fp32 = model_specific_args.scale_attention_softmax_in_fp32
         config.attention_softmax_in_fp32 = model_specific_args.attention_softmax_in_fp32
 
-    torch_dtype = (
-        model_args.torch_dtype
-        if model_args.torch_dtype in ["auto", None]
-        else getattr(torch, model_args.torch_dtype)
+    compute_dtype = (
+        torch.float16
+        if training_args.fp16
+        else (torch.bfloat16 if training_args.bf16 else torch.float32)
     )
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
@@ -178,10 +173,30 @@ def main():
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
-        torch_dtype=torch_dtype,
+        torch_dtype=compute_dtype,
         trust_remote_code=True,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
     )
+    
+    if lora_args.use_lora:
+        lora_config = LoraConfig(
+            r=lora_args.lora_r,
+            lora_alpha=lora_args.lora_alpha,
+            target_modules=lora_args.lora_target_modules,
+            lora_dropout=lora_args.lora_dropout,
+            bias=lora_args.lora_bias,
+            task_type="CAUSAL_LM",
+        )
+        model = get_peft_model(model, lora_config)
+        if training_args.local_rank:
+            print_trainable_parameters(model)       
+
+        if model_args.use_flash_attn or model_args.use_xformer_attn:
+            from monkey_patches import upcast_layer_for_flash_attention
+            model = upcast_layer_for_flash_attention(model, compute_dtype)
+    
+    if training_args.gradient_checkpointing:
+        model.enable_input_require_grads()
 
     ## Setup metrics
 
