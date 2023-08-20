@@ -21,7 +21,7 @@ torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch
     --lr_scheduler_type "cosine" \
     --logging_steps 5 \
     --block_size 2048 \
-    --report_to none \
+    --report_to wandb \
     --run_name fastcode_codegen25_no_fn_ebs_256_lr_5e-5_ep_16 \
     --do_train \
     --do_eval \
