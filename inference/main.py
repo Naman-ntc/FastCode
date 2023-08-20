@@ -170,7 +170,7 @@ def main():
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
 
-    model = LLM(model=args.model, dtype=args.precision)
+    model = LLM(model=args.model, dtype=args.precision, trust_remote_code=args.trust_remote_code)
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.model,
