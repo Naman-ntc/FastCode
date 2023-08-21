@@ -77,7 +77,6 @@ class CodeContestsDataset(torch.utils.data.Dataset):
                 q_str_tokenized_inputs = self.tokenizer(q_str)["input_ids"]
                 if len(q_str_tokenized_inputs) >= self.max_tokens:
                     count += 1
-                    continue
 
                 solution_str_tokenized_inputs = self.tokenizer(solution)[
                     "input_ids"
