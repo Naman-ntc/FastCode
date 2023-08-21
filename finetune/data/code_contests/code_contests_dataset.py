@@ -138,13 +138,13 @@ class CodeContestsDataset(torch.utils.data.Dataset):
 if __name__ == "__main__":
     import json
 
-    from data.code_contests.code_contests_arguments import CodeContestsArguments
+    from data.code_contests.code_contests_arguments import CodeContestsDataArguments
     from transformers import AutoTokenizer
 
     # APPSDataArguments.max_total_samples = 10
-    setattr(CodeContestsArguments, "seed", 0)
-    setattr(CodeContestsArguments, "cache_dir", None)
-    setattr(CodeContestsArguments, "no_fn_subset", False)
+    setattr(CodeContestsDataArguments, "seed", 0)
+    setattr(CodeContestsDataArguments, "cache_dir", None)
+    setattr(CodeContestsDataArguments, "no_fn_subset", False)
 
     tokenizer = AutoTokenizer.from_pretrained(
         "bigcode/santacoder",

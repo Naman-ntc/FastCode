@@ -3,7 +3,7 @@ from typing import Optional
 
 
 @dataclass
-class CodeContestsArguments:
+class CodeContestsDataArguments:
     """
     Arguments pertaining to what data we are going to input our model for training and eval.
     """
@@ -33,19 +33,5 @@ class CodeContestsArguments:
         default=5,
         metadata={
             "help": "The percentage of the train set used as validation set in case there's no validation split"
-        },
-    )
-
-    no_fn_subset: Optional[bool] = field(
-        default=True,
-        metadata={
-            "help": "Only use the subset of training data from codeforces, codechef, and atcoder platforms"
-        },
-    )
-
-    partial_fn_subset: Optional[bool] = field(
-        default=False,
-        metadata={
-            "help": "Only use the subset of training data from codeforces, codechef, and atcoder platforms"
         },
     )
