@@ -31,10 +31,10 @@ import pathlib
 from itertools import chain
 from typing import Optional
 
-import data
+import datasets
 import evaluate
 import torch
-from data import load_dataset
+from datasets import load_dataset
 
 import transformers
 from transformers import (
@@ -124,7 +124,7 @@ def main():
 
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
-    data.utils.logging.set_verbosity(log_level)
+    datasets.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
