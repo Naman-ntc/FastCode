@@ -31,10 +31,10 @@ import pathlib
 from itertools import chain
 from typing import Optional
 
-import datasets
+import data
 import evaluate
 import torch
-from datasets import load_dataset
+from data import load_dataset
 
 import transformers
 from transformers import (
@@ -56,9 +56,9 @@ from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 from peft import LoraConfig, get_peft_model
 
-from apps_dataset import APPSDataset
-from utils import print_trainable_parameters
-from apps_data_arguments import  APPSDataArguments
+from data.apps.apps_dataset import APPSDataset
+from utils.utils import print_trainable_parameters
+from data.apps.apps_data_arguments import  APPSDataArguments
 from model_arguments import ModelArguments, ModelSpecificArguments, LoraArguments
 
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
@@ -99,7 +99,7 @@ def main():
 
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
-    datasets.utils.logging.set_verbosity(log_level)
+    data.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
@@ -192,7 +192,7 @@ def main():
             print_trainable_parameters(model)       
 
         if model_args.use_flash_attn or model_args.use_xformer_attn:
-            from monkey_patches import upcast_layer_for_flash_attention
+            from finetune.utils.monkey_patches import upcast_layer_for_flash_attention
             model = upcast_layer_for_flash_attention(model, compute_dtype)
     
     if training_args.gradient_checkpointing:

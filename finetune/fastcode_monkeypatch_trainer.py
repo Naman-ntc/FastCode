@@ -1,5 +1,5 @@
 import sys
-from monkey_patches import replace_attn_with_flash_attn, replace_attn_with_xformer
+from utils.monkey_patches import replace_attn_with_flash_attn, replace_attn_with_xformer
 
 if __name__ == '__main__':
     if any(arg in sys.argv for arg in ['--use_flash_attn', '--use-flash-attn']):

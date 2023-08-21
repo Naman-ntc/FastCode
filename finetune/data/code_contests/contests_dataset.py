@@ -8,28 +8,22 @@ from datasets import load_dataset
 
 from math import ceil
 
-# borrowed and modified from https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/finetuning/APPS/apps_dataset.py
+# borrowed and heavily modified from https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/finetuning/APPS/apps_dataset.py
 
-class APPSDataset(torch.utils.data.Dataset):
+class CodeContestsDataset(torch.utils.data.Dataset):
     def __init__(self, data_args, tokenizer):
         self.data_args = data_args
         split = f"train" if data_args.max_total_samples is None else f"train[:{data_args.max_total_samples}]"
-        self.dataset = load_dataset("codeparrot/apps", split=split, cache_dir=data_args.cache_dir)
+        self.dataset = load_dataset("deepmind/code_contests", split=split, cache_dir=data_args.cache_dir)
         self.dataset.shuffle(seed=data_args.seed)
 
 
         self.dataset = self.dataset.to_pandas()
-        platforms = self.dataset["url"].str.split('.')
-        platforms0 = platforms.str[0].str.split('/').str[-1]
-        platforms0[platforms0.isin(["open", "www"])] = platforms[platforms0.isin(["open", "www"])].str[1]
-        self.dataset["platform"] = platforms0
-        self.dataset['contains_fn_name'] = self.dataset['input_output'].apply(lambda x : 'fn_name' in x)
 
-        if self.data_args.no_fn_subset:
-            self.dataset = self.dataset[self.dataset.platform.isin(['codeforces', 'codechef', 'atcoder'])]
-        elif self.data_args.partial_fn_subset:
-            raise NotImplementedError("Partial fn subset not implemented yet")
-
+        self.dataset['all_solutions'] = self.dataset['solutions'].apply(lambda x: x['solution'])
+        self.dataset['language'] = self.dataset['solutions'].apply(lambda x: x['language'])
+        self.dataset['python'] = self.dataset.apply(lambda x: x['all_solutions'][x['language'] == 3].tolist(), axis=1)
+        self.dataset['difficulty'] = self.dataset['difficulty'].apply(lambda x: int(x))
 
         self.max_tokens = data_args.block_size
         self.tokenizer = tokenizer
@@ -50,34 +44,19 @@ class APPSDataset(torch.utils.data.Dataset):
             sample = self.dataset.iloc[idx]
 
             # question
-            question_str = sample["question"]
+            question_str = sample["description"]
 
             # solutions
             try:
-                solutions = json.loads(sample["solutions"])
+                solutions = sample["python"][:15]
             except ValueError:
                 skipped_problems.append(idx)
                 continue
 
 
             # starter code
-            starter_code = (
-                "" if len(sample["starter_code"]) == 0 else sample["starter_code"]
-            )
-            try:
-                input_outpout = json.loads(sample["input_output"])
-                fn_name = (
-                    None
-                    if not input_outpout.get("fn_name")
-                    else input_outpout["fn_name"]
-                )
-            except ValueError:
-                fn_name = None
-
             answer_type = (
                 "\nUse Standard Input format\n"
-                if not fn_name
-                else "\nUse Call-Based format\n"
             )
 
             # Read all the solutions
@@ -86,8 +65,6 @@ class APPSDataset(torch.utils.data.Dataset):
                 q_str = (
                     "\nQUESTION:\n"
                     + question_str
-                    + "\n"
-                    + starter_code
                     + "\n"
                     + answer_type
                     + "\nANSWER:\n"
@@ -153,19 +130,19 @@ class APPSDataset(torch.utils.data.Dataset):
 if __name__ == "__main__":
     import json
 
-    from apps_data_arguments import  APPSDataArguments
+    from data.code_contests.code_contests_arguments import  CodeContestsArguments
     from transformers import AutoTokenizer
 
     # APPSDataArguments.max_total_samples = 10
-    setattr(APPSDataArguments, "seed", 0)
-    setattr(APPSDataArguments, "cache_dir", None)
-    setattr(APPSDataArguments, "no_fn_subset", False)
+    setattr(CodeContestsArguments, "seed", 0)
+    setattr(CodeContestsArguments, "cache_dir", None)
+    setattr(CodeContestsArguments, "no_fn_subset", False)
     
     tokenizer = AutoTokenizer.from_pretrained(
         "bigcode/santacoder", use_auth_token=True, trust_remote_code=True,
     )
     
-    dataset = APPSDataset(APPSDataArguments, tokenizer)
+    dataset = CodeContestsDataset(CodeContestsArguments, tokenizer)
 
 
     for example in range(5):
@@ -174,6 +151,6 @@ if __name__ == "__main__":
         labels[labels == -100] = tokenizer.eos_token_id
         decoded_labels = tokenizer.decode(labels)
         decoded_labels = decoded_labels.replace(tokenizer.eos_token, "")
-        # print(f"labels {'-' * 10}:\n{tokenizer.decode(labels)}")
-        # print("#"*50)
+        print(f"labels {'-' * 10}:\n{tokenizer.decode(labels)}")
+        print("#"*50)
     
