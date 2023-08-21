@@ -41,7 +41,8 @@ Note that flash attention is underperforming for the larger 7b model. We will lo
 |starcoder-1b | Flash Attention | TODO |
 
 ## Effect of training configuration and GPUs
-We evaluate the different training configurations (gradient checkpointing, batch size) across different GPUs here. The performance is measured using the xformer memory-efficient attention. Note that FSDP or deepspeed is not used since it is a 1B model.
+We evaluate the different training configurations (gradient checkpointing, batch size) across different GPUs here. The performance is measured using the xformer memory-efficient attention. Note that FSDP or deepspeed is not used since it is a 1B model. Note that the performance across GPUs is not directly configurable since they the respective machines are not identical. 
+
 ### V100 (32GB)
 | Gradient Checkpointing | Gradient Accumulation Steps | Per Device Train Batch Size | Time per Iteration |
 | --- | --- | --- | --- |

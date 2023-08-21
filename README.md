@@ -13,7 +13,7 @@ git clone https://github.com/Naman-ntc/FastCode.git --recursive
 For installations, we recommend using python version 3.8 or higher, CUDA version between 11.0 and 11.8 and GPUs with capability 7.0 or higher. To install, you can simply run `./setup.sh` which will install all the dependencies.
 
 ## FineTuning
-We support [starcoder](https://huggingface.co/bigcode/starcoder) and [codegen2.5](https://huggingface.co/Salesforce/codegen25-7b-mono) family of models currently. We have implemented efficient attention implementations like flash-attention and memory-efficient-attention.
+We support [starcoder](https://huggingface.co/bigcode/starcoder) and [codegen2.5](https://huggingface.co/Salesforce/codegen25-7b-mono) family of models currently. We have implemented efficient attention implementations like flash-attention and memory-efficient-attention that provides over **3x** speed up for larger models and over **2x** speed up for smaller models.  
 
 `finetune/scripts` contains scripts for fine-tuning models on the code generation tasks for different models and different GPUs. We have optimized the training arguments for optimized performance for `V100`, `A6000`, and `A100` GPUs. [finetune/README.md](finetune/README.md) also contains training performance benchmarked across the different GPUs.
 
@@ -26,7 +26,7 @@ We use [`vllm`](https://vllm.readthedocs.io/en/latest/index.html) for blazing fa
 We use `bigcode-evaluation-harness` for performing our evaluation. The inference step above generates the data in the appropirate format as expected by the harness. To perform evaluation on the humaneval dataset follow the script below
 
 ```
-cd evaluation
+cd evaluation/bigcode-evaluation-harness
 python main.py --tasks humaneval --allow_code_execution --n_samples {n} --limit {limit} --load_generations_path {path}
 ```
 
@@ -36,9 +36,9 @@ python main.py --tasks humaneval --allow_code_execution --n_samples {n} --limit 
 - [x] Add lora finetuning support
 - [x] Add finetuning performance benchmarks for attention and lora
 - [x] Support FlashAttention for BigCode models
-- [] Add finetuning performance benchmarks for larger models
-- [] Add quantized model training support
-- [] Add quantized model inference support
+- [ ] Add finetuning performance benchmarks for larger models
+- [ ] Add quantized model training support
+- [ ] Add quantized model inference support
 
 ## Citation
 If you find this repository useful, please cite this as
