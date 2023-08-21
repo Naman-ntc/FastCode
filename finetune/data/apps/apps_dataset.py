@@ -10,32 +10,43 @@ from math import ceil
 
 # borrowed and modified from https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/finetuning/APPS/apps_dataset.py
 
+
 class APPSDataset(torch.utils.data.Dataset):
     def __init__(self, data_args, tokenizer):
         self.data_args = data_args
-        split = f"train" if data_args.max_total_samples is None else f"train[:{data_args.max_total_samples}]"
-        self.dataset = load_dataset("codeparrot/apps", split=split, cache_dir=data_args.cache_dir)
+        split = (
+            f"train"
+            if data_args.max_total_samples is None
+            else f"train[:{data_args.max_total_samples}]"
+        )
+        self.dataset = load_dataset(
+            "codeparrot/apps", split=split, cache_dir=data_args.cache_dir
+        )
         self.dataset.shuffle(seed=data_args.seed)
 
-
         self.dataset = self.dataset.to_pandas()
-        platforms = self.dataset["url"].str.split('.')
-        platforms0 = platforms.str[0].str.split('/').str[-1]
-        platforms0[platforms0.isin(["open", "www"])] = platforms[platforms0.isin(["open", "www"])].str[1]
+        platforms = self.dataset["url"].str.split(".")
+        platforms0 = platforms.str[0].str.split("/").str[-1]
+        platforms0[platforms0.isin(["open", "www"])] = platforms[
+            platforms0.isin(["open", "www"])
+        ].str[1]
         self.dataset["platform"] = platforms0
-        self.dataset['contains_fn_name'] = self.dataset['input_output'].apply(lambda x : 'fn_name' in x)
+        self.dataset["contains_fn_name"] = self.dataset["input_output"].apply(
+            lambda x: "fn_name" in x
+        )
 
         if self.data_args.no_fn_subset:
-            self.dataset = self.dataset[self.dataset.platform.isin(['codeforces', 'codechef', 'atcoder'])]
+            self.dataset = self.dataset[
+                self.dataset.platform.isin(["codeforces", "codechef", "atcoder"])
+            ]
         elif self.data_args.partial_fn_subset:
             raise NotImplementedError("Partial fn subset not implemented yet")
-
 
         self.max_tokens = data_args.block_size
         self.tokenizer = tokenizer
 
         self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.samples = []  
+        self.samples = []
 
         self._initialize()
 
@@ -58,7 +69,6 @@ class APPSDataset(torch.utils.data.Dataset):
             except ValueError:
                 skipped_problems.append(idx)
                 continue
-
 
             # starter code
             starter_code = (
@@ -96,8 +106,10 @@ class APPSDataset(torch.utils.data.Dataset):
                 if len(q_str_tokenized_inputs) >= self.max_tokens:
                     count += 1
                     continue
-                
-                solution_str_tokenized_inputs = self.tokenizer(solution)["input_ids"] + [self.tokenizer.eos_token_id]
+
+                solution_str_tokenized_inputs = self.tokenizer(solution)[
+                    "input_ids"
+                ] + [self.tokenizer.eos_token_id]
                 sample = [q_str_tokenized_inputs, solution_str_tokenized_inputs]
                 all_samples.append(sample)
 
@@ -111,7 +123,7 @@ class APPSDataset(torch.utils.data.Dataset):
         print(f"Skipped {count} problems because the prompt was too long")
         self.samples = all_samples
         self.samples_dict = all_samples_dict
-    
+
     def __len__(self):
         return len(self.samples)
 
@@ -135,11 +147,11 @@ class APPSDataset(torch.utils.data.Dataset):
             curr_num_tokens += len(curr_a_tokenized)
 
             c_q_tokenized, curr_a_tokenized = random.choice(self.samples)
-        
+
         assert len(input_ids) == len(label_ids)
 
-        input_ids = input_ids[:self.max_tokens]
-        label_ids = label_ids[:self.max_tokens]
+        input_ids = input_ids[: self.max_tokens]
+        label_ids = label_ids[: self.max_tokens]
 
         return input_ids, label_ids
 
@@ -149,24 +161,26 @@ class APPSDataset(torch.utils.data.Dataset):
             "input_ids": torch.LongTensor(input_ids),
             "labels": torch.LongTensor(label_ids),
         }
-    
+
+
 if __name__ == "__main__":
     import json
 
-    from data.apps.apps_data_arguments import  APPSDataArguments
+    from data.apps.apps_data_arguments import APPSDataArguments
     from transformers import AutoTokenizer
 
     # APPSDataArguments.max_total_samples = 10
     setattr(APPSDataArguments, "seed", 0)
     setattr(APPSDataArguments, "cache_dir", None)
     setattr(APPSDataArguments, "no_fn_subset", False)
-    
-    tokenizer = AutoTokenizer.from_pretrained(
-        "bigcode/santacoder", use_auth_token=True, trust_remote_code=True,
-    )
-    
-    dataset = APPSDataset(APPSDataArguments, tokenizer)
 
+    tokenizer = AutoTokenizer.from_pretrained(
+        "bigcode/santacoder",
+        use_auth_token=True,
+        trust_remote_code=True,
+    )
+
+    dataset = APPSDataset(APPSDataArguments, tokenizer)
 
     for example in range(5):
         example = dataset[example]
@@ -176,4 +190,3 @@ if __name__ == "__main__":
         decoded_labels = decoded_labels.replace(tokenizer.eos_token, "")
         # print(f"labels {'-' * 10}:\n{tokenizer.decode(labels)}")
         # print("#"*50)
-    

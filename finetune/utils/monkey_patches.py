@@ -16,10 +16,14 @@ from einops import rearrange
 import xformers.ops as xops
 
 try:
-    from flash_attn.flash_attn_interface import flash_attn_func, flash_attn_varlen_qkvpacked_func
+    from flash_attn.flash_attn_interface import (
+        flash_attn_func,
+        flash_attn_varlen_qkvpacked_func,
+    )
     from flash_attn.bert_padding import unpad_input, pad_input
 except ImportError:
     logging.warning("flash_attn not installed")
+
 
 def llama_xformer_forward(
     self,
@@ -29,19 +33,32 @@ def llama_xformer_forward(
     past_key_value: Optional[Tuple[torch.Tensor]] = None,
     output_attentions: bool = False,
     use_cache: bool = False,
-) -> Tuple[torch.Tensor, Optional[torch.Tensor],
-            Optional[Tuple[torch.Tensor]]]:
+) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
     bsz, q_len, _ = hidden_states.size()
 
-    query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-    key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-    value_states = self.v_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+    query_states = (
+        self.q_proj(hidden_states)
+        .view(bsz, q_len, self.num_heads, self.head_dim)
+        .transpose(1, 2)
+    )
+    key_states = (
+        self.k_proj(hidden_states)
+        .view(bsz, q_len, self.num_heads, self.head_dim)
+        .transpose(1, 2)
+    )
+    value_states = (
+        self.v_proj(hidden_states)
+        .view(bsz, q_len, self.num_heads, self.head_dim)
+        .transpose(1, 2)
+    )
 
     kv_seq_len = key_states.shape[-2]
     if past_key_value is not None:
         kv_seq_len += past_key_value[0].shape[-2]
     cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
-    query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
+    query_states, key_states = apply_rotary_pos_emb(
+        query_states, key_states, cos, sin, position_ids
+    )
     # [bsz, nh, t, hd]
 
     if past_key_value is not None:
@@ -50,7 +67,7 @@ def llama_xformer_forward(
         value_states = torch.cat([past_key_value[1], value_states], dim=2)
 
     past_key_value = (key_states, value_states) if use_cache else None
-    
+
     # Copied from modeling_open_llama.py
     attn_weights = None
 
@@ -58,18 +75,23 @@ def llama_xformer_forward(
     key_states = key_states.transpose(1, 2)
     value_states = value_states.transpose(1, 2)
     attn_output = xops.memory_efficient_attention(
-        query_states, key_states, value_states, attn_bias=xops.LowerTriangularMask(), p=0
+        query_states,
+        key_states,
+        value_states,
+        attn_bias=xops.LowerTriangularMask(),
+        p=0,
     )
     attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
 
     attn_output = self.o_proj(attn_output)
-    
+
     assert not use_cache, "xformer does not support use_cache=True"
 
     if not output_attentions:
         attn_weights = None
 
     return attn_output, attn_weights, past_key_value
+
 
 def llama_fa_forward(
     self,
@@ -154,6 +176,7 @@ def _prepare_decoder_attention_mask_llama(
     # [bsz, seq_len]
     return attention_mask
 
+
 def bigcode_fa_new_attn(self, query, key, value, attention_mask=None, head_mask=None):
     ## require for lora -- need fix?
     query = query.to(torch.bfloat16)
@@ -162,28 +185,43 @@ def bigcode_fa_new_attn(self, query, key, value, attention_mask=None, head_mask=
 
     ## flash attention
     bsz, q_len, _ = query.shape
-    key = key.transpose(-1,-2)[:,:,None,:]
-    value = value[:,:,None,:]
+    key = key.transpose(-1, -2)[:, :, None, :]
+    value = value[:, :, None, :]
     query = query.reshape(bsz, q_len, self.num_heads, self.head_dim)
-    attn_output = flash_attn_func(query, key, value, dropout_p=self.attn_dropout.p, softmax_scale=None, causal=True)
-    attn_output = attn_output.reshape(attn_output.shape[0], attn_output.shape[1], self.num_heads*self.head_dim)
+    attn_output = flash_attn_func(
+        query,
+        key,
+        value,
+        dropout_p=self.attn_dropout.p,
+        softmax_scale=None,
+        causal=True,
+    )
+    attn_output = attn_output.reshape(
+        attn_output.shape[0], attn_output.shape[1], self.num_heads * self.head_dim
+    )
     return attn_output, None
-    
 
-def bigcode_xformer_new_attn(self, query, key, value, attention_mask=None, head_mask=None):    
+
+def bigcode_xformer_new_attn(
+    self, query, key, value, attention_mask=None, head_mask=None
+):
     ## require for lora -- need fix in c_attn?
     query = query.to(torch.bfloat16)
     key = key.to(torch.bfloat16)
     value = value.to(torch.bfloat16)
 
     # xformer attention
-    key = key.transpose(-1,-2)[:,:,None,:]
-    value = value[:,:,None,:]
+    key = key.transpose(-1, -2)[:, :, None, :]
+    value = value[:, :, None, :]
     query = query.reshape(query.shape[0], query.shape[1], self.num_heads, self.head_dim)
-    key = torch.repeat_interleave(key, self.num_heads//key.shape[2], dim=2)
-    value = torch.repeat_interleave(value, self.num_heads//value.shape[2], dim=2)
-    attn_output = xops.memory_efficient_attention(query, key, value, p=0, attn_bias=xops.LowerTriangularMask()) 
-    attn_output = attn_output.reshape(attn_output.shape[0], attn_output.shape[1], self.num_heads*self.head_dim)    
+    key = torch.repeat_interleave(key, self.num_heads // key.shape[2], dim=2)
+    value = torch.repeat_interleave(value, self.num_heads // value.shape[2], dim=2)
+    attn_output = xops.memory_efficient_attention(
+        query, key, value, p=0, attn_bias=xops.LowerTriangularMask()
+    )
+    attn_output = attn_output.reshape(
+        attn_output.shape[0], attn_output.shape[1], self.num_heads * self.head_dim
+    )
     return attn_output, None
 
 
@@ -195,16 +233,23 @@ def replace_attn_with_flash_attn():
             "ref: https://github.com/HazyResearch/flash-attention/issues/190#issuecomment-1523359593"
         )
         return
-    
+
     transformers.models.llama.modeling_llama.LlamaModel._prepare_decoder_attention_mask = (
         _prepare_decoder_attention_mask_llama
     )
     transformers.models.llama.modeling_llama.LlamaAttention.forward = llama_fa_forward
-    transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = bigcode_fa_new_attn
-    
+    transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = (
+        bigcode_fa_new_attn
+    )
+
+
 def replace_attn_with_xformer():
-    transformers.models.llama.modeling_llama.LlamaAttention.forward = llama_xformer_forward
-    transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = bigcode_xformer_new_attn
+    transformers.models.llama.modeling_llama.LlamaAttention.forward = (
+        llama_xformer_forward
+    )
+    transformers.models.gpt_bigcode.modeling_gpt_bigcode.GPTBigCodeAttention._attn = (
+        bigcode_xformer_new_attn
+    )
 
 
 def upcast_layer_for_flash_attention(model, torch_dtype):

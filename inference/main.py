@@ -16,6 +16,7 @@ from generation_arguments import EvalArguments
 sys.path.append("../evaluation/bigcode-evaluation-harness")
 from lm_eval.tasks import ALL_TASKS
 
+
 class MultiChoice:
     def __init__(self, choices):
         self.choices = choices
@@ -145,11 +146,14 @@ def parse_args():
 
     args.precision = precision_map[args.precision]
     args.tasks = pattern_match(args.tasks.split(","), ALL_TASKS)
-    assert len(args.tasks) == 1, f"Only one task is supported at the moment, you gave {args.tasks}"
+    assert (
+        len(args.tasks) == 1
+    ), f"Only one task is supported at the moment, you gave {args.tasks}"
     args.task_name = args.tasks[0]
-    
+
     assert args.instruction_tokens is None, "Instruction tokens are not supported yet"
     return args
+
 
 def pattern_match(patterns, source_list):
     """Returns a list containing all values of the source_list that
@@ -161,7 +165,6 @@ def pattern_match(patterns, source_list):
     return list(task_names)
 
 
-
 def main():
     args = parse_args()
     random.seed(args.seed)
@@ -170,7 +173,9 @@ def main():
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
 
-    model = LLM(model=args.model, dtype=args.precision, trust_remote_code=args.trust_remote_code)
+    model = LLM(
+        model=args.model, dtype=args.precision, trust_remote_code=args.trust_remote_code
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.model,
@@ -188,7 +193,6 @@ def main():
             raise ValueError("No eos_token or bos_token found")
     tokenizer.pad_token = tokenizer.eos_token
 
-
     generator = Generator(model, tokenizer, args)
     generations, references = generator.generate(args.task_name)
 
@@ -199,6 +203,7 @@ def main():
         with open(args.save_generations_path, "w") as fp:
             json.dump(references, fp)
             print("references were saved")
+
 
 if __name__ == "__main__":
     main()

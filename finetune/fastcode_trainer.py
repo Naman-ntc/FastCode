@@ -58,12 +58,16 @@ from peft import LoraConfig, get_peft_model
 
 from data.apps.apps_dataset import APPSDataset
 from utils.utils import print_trainable_parameters
-from data.apps.apps_data_arguments import  APPSDataArguments
+from data.apps.apps_data_arguments import APPSDataArguments
 from model_arguments import ModelArguments, ModelSpecificArguments, LoraArguments
 
-require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
+require_version(
+    "datasets>=1.8.0",
+    "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt",
+)
 
 logger = logging.getLogger(__name__)
+
 
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
     """Collects the state dict and dump to disk."""
@@ -73,19 +77,40 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
+
 def main():
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    parser = HfArgumentParser((ModelArguments, ModelSpecificArguments, LoraArguments, APPSDataArguments, TrainingArguments))
+    parser = HfArgumentParser(
+        (
+            ModelArguments,
+            ModelSpecificArguments,
+            LoraArguments,
+            APPSDataArguments,
+            TrainingArguments,
+        )
+    )
 
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
-        model_args, model_specific_args, lora_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        (
+            model_args,
+            model_specific_args,
+            lora_args,
+            data_args,
+            training_args,
+        ) = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else:
-        model_args, model_specific_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
+        (
+            model_args,
+            model_specific_args,
+            lora_args,
+            data_args,
+            training_args,
+        ) = parser.parse_args_into_dataclasses()
 
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -111,12 +136,10 @@ def main():
     )
     logger.info(f"Training/evaluation parameters {training_args}")
 
-
     # Set seed before initializing model.
     set_seed(training_args.seed)
     setattr(data_args, "seed", training_args.seed)
     setattr(data_args, "cache_dir", model_args.cache_dir)
-
 
     ## Load the tokenizer
 
@@ -125,22 +148,23 @@ def main():
         "use_fast": True,
         "revision": model_args.model_revision,
         "use_auth_token": True if model_args.use_auth_token else None,
-        "trust_remote_code": True
+        "trust_remote_code": True,
     }
-    tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, **tokenizer_kwargs)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_args.model_name_or_path, **tokenizer_kwargs
+    )
 
     ## Load the dataset
 
     full_dataset = APPSDataset(data_args, tokenizer)
     full_dataset_length = len(full_dataset)
-    eval_size = int(full_dataset_length * data_args.eval_split_percentage / 100.)
+    eval_size = int(full_dataset_length * data_args.eval_split_percentage / 100.0)
 
     train_dataset, eval_dataset = torch.utils.data.random_split(
         full_dataset,
         [full_dataset_length - eval_size, eval_size],
         generator=torch.Generator().manual_seed(training_args.seed),
     )
-
 
     ## Load the model
 
@@ -149,16 +173,20 @@ def main():
         "cache_dir": model_args.cache_dir,
         "revision": model_args.model_revision,
         "use_auth_token": True if model_args.use_auth_token else None,
-        "trust_remote_code": True
+        "trust_remote_code": True,
     }
 
     config = AutoConfig.from_pretrained(model_args.model_name_or_path, **config_kwargs)
-    if config.architectures[0] == 'MPTForCausalLM':
-        config.attn_config['attn_impl'] = model_specific_args.attn_impl
-        config.attn_config['alibi'] = model_specific_args.alibi
-        logger.info(f"Setting attn_config['attn_impl'] = {model_specific_args.attn_impl} and attn_config['alibi'] = {model_specific_args.alibi} (architecture MPTForCausalLM)")
-    if config.architectures[0]== "GPTBigCodeForCausalLM":
-        config.scale_attention_softmax_in_fp32 = model_specific_args.scale_attention_softmax_in_fp32
+    if config.architectures[0] == "MPTForCausalLM":
+        config.attn_config["attn_impl"] = model_specific_args.attn_impl
+        config.attn_config["alibi"] = model_specific_args.alibi
+        logger.info(
+            f"Setting attn_config['attn_impl'] = {model_specific_args.attn_impl} and attn_config['alibi'] = {model_specific_args.alibi} (architecture MPTForCausalLM)"
+        )
+    if config.architectures[0] == "GPTBigCodeForCausalLM":
+        config.scale_attention_softmax_in_fp32 = (
+            model_specific_args.scale_attention_softmax_in_fp32
+        )
         config.attention_softmax_in_fp32 = model_specific_args.attention_softmax_in_fp32
 
     compute_dtype = (
@@ -177,7 +205,7 @@ def main():
         trust_remote_code=True,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
     )
-    
+
     if lora_args.use_lora:
         lora_config = LoraConfig(
             r=lora_args.lora_r,
@@ -189,12 +217,13 @@ def main():
         )
         model = get_peft_model(model, lora_config)
         if training_args.local_rank:
-            print_trainable_parameters(model)       
+            print_trainable_parameters(model)
 
         if model_args.use_flash_attn or model_args.use_xformer_attn:
             from finetune.utils.monkey_patches import upcast_layer_for_flash_attention
+
             model = upcast_layer_for_flash_attention(model, compute_dtype)
-    
+
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
 
@@ -226,8 +255,10 @@ def main():
         tokenizer=tokenizer,
         # Data collator will default to DataCollatorWithPadding, so we change it.
         data_collator=default_data_collator,
-        compute_metrics=compute_metrics if training_args.do_eval and not is_torch_tpu_available() else None,
-        preprocess_logits_for_metrics=preprocess_logits_for_metrics
+        compute_metrics=compute_metrics
+        if training_args.do_eval and not is_torch_tpu_available()
+        else None,
+        preprocess_logits_for_metrics=preprocess_logits_for_metrics,
     )
 
     # Training

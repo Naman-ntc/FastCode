@@ -1,6 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass, field
 
+
 @dataclass
 class ModelArguments:
     """
@@ -18,12 +19,16 @@ class ModelArguments:
 
     cache_dir: Optional[str] = field(
         default=None,
-        metadata={"help": "Where do you want to store the pretrained models downloaded from huggingface.co"},
+        metadata={
+            "help": "Where do you want to store the pretrained models downloaded from huggingface.co"
+        },
     )
 
     model_revision: str = field(
         default="main",
-        metadata={"help": "The specific model version to use (can be a branch name, tag name or commit id)."},
+        metadata={
+            "help": "The specific model version to use (can be a branch name, tag name or commit id)."
+        },
     )
 
     use_auth_token: bool = field(
@@ -77,13 +82,14 @@ class ModelArguments:
         },
     )
 
+
 @dataclass
 class ModelSpecificArguments:
     """
     Arguments pertaining to the specific model to be used.
     """
 
-    scale_attention_softmax_in_fp32 : Optional[bool] = field(
+    scale_attention_softmax_in_fp32: Optional[bool] = field(
         default=False,
         metadata={
             "help": (
@@ -92,7 +98,7 @@ class ModelSpecificArguments:
         },
     )
 
-    attention_softmax_in_fp32 : Optional[bool] = field(
+    attention_softmax_in_fp32: Optional[bool] = field(
         default=False,
         metadata={
             "help": (
@@ -101,7 +107,7 @@ class ModelSpecificArguments:
         },
     )
 
-    alibi : Optional[bool] = field(
+    alibi: Optional[bool] = field(
         default=True,
         metadata={
             "help": (
@@ -110,7 +116,7 @@ class ModelSpecificArguments:
         },
     )
 
-    attn_impl : Optional[str] = field(
+    attn_impl: Optional[str] = field(
         default="triton",
         metadata={
             "help": (
@@ -119,23 +125,16 @@ class ModelSpecificArguments:
         },
     )
 
+
 @dataclass
 class LoraArguments:
     use_lora: bool = field(
         default=False,
-        metadata={
-            "help": (
-                "Use LoRA performance efficient fine-tuning."
-            )
-        },
+        metadata={"help": ("Use LoRA performance efficient fine-tuning.")},
     )
     q_lora: bool = field(
         default=False,
-        metadata={
-            "help": (
-                "Use QLoRA performance efficient fine-tuning."
-            )
-        }
+        metadata={"help": ("Use QLoRA performance efficient fine-tuning.")},
     )
     lora_r: int = 8
     lora_alpha: int = 16

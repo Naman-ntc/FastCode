@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import IterableDataset
 from tqdm import tqdm
 
+
 class TokenizedDataset(IterableDataset):
     """Tokenize and preprocess the dataset
     Multiple copies of the same prompt are sent sequentially. See compute_code for more details.
@@ -32,7 +33,6 @@ class TokenizedDataset(IterableDataset):
         self.n_copies = n_copies
         self.prefix = prefix
 
-
     def __iter__(self):
         prompts = []
         row_idxs = []
@@ -54,7 +54,6 @@ class TokenizedDataset(IterableDataset):
             max_length=self.max_length,
             return_token_type_ids=return_token_type_ids,
         )
-
 
         for sample in range(self.n_tasks):
             for _ in range(self.n_copies):
@@ -89,7 +88,9 @@ def complete_code(
             )
             continue
         sampling_params.max_tokens = max_length_generation - num_tokens
-        outputs = model.generate(prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False)
+        outputs = model.generate(
+            prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False
+        )
 
         generated_tasks = batch["row_index"].repeat(batch_size)
         generated_texts = [o.text for o in outputs[0].outputs]
@@ -102,5 +103,5 @@ def complete_code(
             if postprocess:
                 text = task.postprocess_generation(text, task_idx)
             code_gens[task_idx].append(text)
-    
+
     return code_gens
