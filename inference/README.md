@@ -1,8 +1,8 @@
 # Inference
 
-We use `vllm` for performing fast inference and recommend using Ampere GPUs (A100 or A6000). The inference scripts are aligned with the bigcode-evaluation-harness to require minimal changes. 
+We present the FastCode inference utilities here. The inference scripts are aligned with the bigcode-evaluation-harness to require minimal changes for people who are familiar with the harness.
 
-**Note : Using vllm might have some regression in outputs but we have not obverved degradation in performance so far**
+**Note : Using vllm might have some regression in outputs. We have not obverved degradation in performance**
 
 ## Inference on a single GPU
 To perform inference on a single GPU, use the following script
@@ -13,11 +13,11 @@ CUDA_VISIBLE_DEVICES=0 python main.py \
 --max_length_generation 1024 --precision bf16 \
 --save_generations --save_generations_path ./generations/starcoder_humaneval_generations.json
 ```
-At a particular iteration, we only perform inference corresponding to one problem (with multiple completions determined by `batch_size`). Hence, for the best performance, `batch_size` should evenly divide the `n_samples`. 
+The inference loops over the dataset and generates `n_samples` completions for each problem using an inner loop determined by `batch_size`. Hence, for the best performance, `batch_size` should evenly divide the `n_samples`. 
 
 ## Distributed inference
 Please look at `scripts` folder for optimized scripts. 
-To perform distributed inference over the dataset, we spawn individual processes for equal fraction of the dataset. To perform this split, we inserted `--start {START}` and `--end {END}` flags which slice different portions of the dataset. Additionally, some datasets (like humaneval) are _semi-sorted_ by hardness which leads to throughput depending on the slowest process. To avoid this, we shuffle the dataset before splitting using the `--shuffle` flag.
+To perform distributed inference over the dataset, we will spawn individual processes for equal fraction of the dataset. The `--start {START}` and `--end {END}` flags provide functionality to access different portions of the dataset. Additionally, some datasets (like humaneval) are _semi-sorted_ by hardness which creates a bottleneck based on the _harder_ slice of the dataset. To avoid this, we shuffle the dataset before splitting using the `--shuffle` flag.
 
 ```bash
 CUDA_VISIBLE_DEVICES=i python main.py \
