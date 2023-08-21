@@ -58,7 +58,7 @@ from peft import LoraConfig, get_peft_model
 
 from data.apps.apps_dataset import APPSDataset
 from utils.utils import print_trainable_parameters
-from finetune.data.apps.apps_arguments import APPSDataArguments
+from data.apps.apps_arguments import APPSDataArguments
 from model_arguments import ModelArguments, ModelSpecificArguments, LoraArguments
 
 require_version(

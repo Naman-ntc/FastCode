@@ -152,7 +152,7 @@ if __name__ == "__main__":
         trust_remote_code=True,
     )
 
-    dataset = CodeContestsDataset(CodeContestsArguments, tokenizer)
+    dataset = CodeContestsDataset(CodeContestsDataArguments, tokenizer)
 
     for example in range(5):
         example = dataset[example]
