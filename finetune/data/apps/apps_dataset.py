@@ -166,7 +166,7 @@ class APPSDataset(torch.utils.data.Dataset):
 if __name__ == "__main__":
     import json
 
-    from data.apps.apps_data_arguments import APPSDataArguments
+    from finetune.data.apps.apps_arguments import APPSDataArguments
     from transformers import AutoTokenizer
 
     # APPSDataArguments.max_total_samples = 10
