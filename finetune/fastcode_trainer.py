@@ -31,9 +31,9 @@ import pathlib
 from itertools import chain
 from typing import Optional
 
-import datasets
-import evaluate
 import torch
+import evaluate
+import datasets
 from datasets import load_dataset
 
 import transformers
@@ -50,15 +50,17 @@ from transformers import (
     is_torch_tpu_available,
     set_seed,
 )
+from peft import LoraConfig, get_peft_model
 from transformers.testing_utils import CaptureLogger
+from transformers.utils.versions import require_version
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
-from transformers.utils.versions import require_version
-from peft import LoraConfig, get_peft_model
 
 from data.apps.apps_dataset import APPSDataset
 from utils.utils import print_trainable_parameters
 from data.apps.apps_arguments import APPSDataArguments
+from data.code_contests.code_contests_dataset import CodeContestsDataset
+from data.code_contests.code_contests_arguments import CodeContestsDataArguments
 from model_arguments import ModelArguments, ModelSpecificArguments, LoraArguments
 
 require_version(
@@ -189,10 +191,10 @@ def main():
         )
         config.attention_softmax_in_fp32 = model_specific_args.attention_softmax_in_fp32
 
-    compute_dtype = (
-        torch.float16
-        if training_args.fp16
-        else (torch.bfloat16 if training_args.bf16 else torch.float32)
+    torch_dtype = (
+        model_args.torch_dtype
+        if model_args.torch_dtype in ["auto", None]
+        else getattr(torch, model_args.torch_dtype)
     )
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
@@ -201,12 +203,17 @@ def main():
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
-        torch_dtype=compute_dtype,
+        torch_dtype=torch_dtype,
         trust_remote_code=True,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
     )
 
     if lora_args.use_lora:
+        compute_dtype = (
+            torch.float16
+            if training_args.fp16
+            else (torch.bfloat16 if training_args.bf16 else torch.float32)
+        )
         lora_config = LoraConfig(
             r=lora_args.lora_r,
             lora_alpha=lora_args.lora_alpha,
