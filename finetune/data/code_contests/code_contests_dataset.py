@@ -144,6 +144,8 @@ if __name__ == "__main__":
     setattr(CodeContestsDataArguments, "seed", 0)
     setattr(CodeContestsDataArguments, "cache_dir", None)
     setattr(CodeContestsDataArguments, "no_fn_subset", False)
+    setattr(CodeContestsDataArguments, "max_total_samples", 20)
+    
 
     tokenizer = AutoTokenizer.from_pretrained(
         "bigcode/santacoder",

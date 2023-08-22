@@ -127,7 +127,6 @@ class APPSDataset(torch.utils.data.Dataset):
         return len(self.samples)
 
     def _pack_samples(self, idx):
-
         input_ids = []
         label_ids = []
 
@@ -172,6 +171,7 @@ if __name__ == "__main__":
     setattr(APPSDataArguments, "seed", 0)
     setattr(APPSDataArguments, "cache_dir", None)
     setattr(APPSDataArguments, "no_fn_subset", False)
+    setattr(APPSDataArguments, "max_total_samples", 20)
 
     tokenizer = AutoTokenizer.from_pretrained(
         "bigcode/santacoder",
@@ -187,5 +187,5 @@ if __name__ == "__main__":
         labels[labels == -100] = tokenizer.eos_token_id
         decoded_labels = tokenizer.decode(labels)
         decoded_labels = decoded_labels.replace(tokenizer.eos_token, "")
-        # print(f"labels {'-' * 10}:\n{tokenizer.decode(labels)}")
-        # print("#"*50)
+        print(f"labels {'-' * 10}:\n{tokenizer.decode(labels)}")
+        print("#" * 50)
