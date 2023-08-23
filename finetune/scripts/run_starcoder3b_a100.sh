@@ -7,8 +7,8 @@ torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch
     --output_dir checkpoints_starcoder3b_small_data_ebs_256_lr_5e5 \
     --num_train_epochs 16 \
     --gradient_checkpointing True \
-    --gradient_accumulation_steps 4 \
-    --per_device_train_batch_size 8 \
+    --gradient_accumulation_steps 8 \
+    --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 2 \
     --save_strategy "steps" \
     --save_steps 100 \

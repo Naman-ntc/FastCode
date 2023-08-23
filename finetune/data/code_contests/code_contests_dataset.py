@@ -77,6 +77,7 @@ class CodeContestsDataset(torch.utils.data.Dataset):
                 q_str_tokenized_inputs = self.tokenizer(q_str)["input_ids"]
                 if len(q_str_tokenized_inputs) >= self.max_tokens:
                     count += 1
+                    continue
 
                 solution_str_tokenized_inputs = self.tokenizer(solution)[
                     "input_ids"
@@ -99,7 +100,6 @@ class CodeContestsDataset(torch.utils.data.Dataset):
         return len(self.samples)
 
     def _pack_samples(self, idx):
-
         input_ids = []
         label_ids = []
 
@@ -145,7 +145,6 @@ if __name__ == "__main__":
     setattr(CodeContestsDataArguments, "cache_dir", None)
     setattr(CodeContestsDataArguments, "no_fn_subset", False)
     setattr(CodeContestsDataArguments, "max_total_samples", 20)
-    
 
     tokenizer = AutoTokenizer.from_pretrained(
         "bigcode/santacoder",
