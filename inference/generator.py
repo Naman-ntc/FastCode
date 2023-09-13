@@ -55,7 +55,7 @@ class Generator:
             temperature=self.args.temperature,
             top_p=self.args.top_p,
             top_k=self.args.top_k,
-            max_tokens=self.args.max_length_generation,  ## proxy updated in utils
+            max_tokens=self.args.max_sequence_length,  ## proxy updated in utils
             stop=task.stop_words,
         )
 

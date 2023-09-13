@@ -186,6 +186,9 @@ def main():
     references = get_references(task, args)
 
     if args.limit is None:
+        print(
+            f"limit not set -- using full dataset with size {len(task.get_dataset())}"
+        )
         data_size = len(task.get_dataset())
     else:
         data_size = args.limit
@@ -198,7 +201,9 @@ def main():
         end = data_size * ((gpu_idx + 1) // args.num_gpus)
         generations_path = f"model_outputs/generations_{args.exp_name}_{gpu_idx}.json"
         cuda_command = f"export CUDA_VISIBLE_DEVICES={gpu_idx}"
-        print_info_command = f"echo 'Running on GPU {gpu_idx}'"
+        print_info_command = (
+            f"echo 'Running on GPU {gpu_idx} with indices {start} to {end}'"
+        )
         run_command = []
         run_command.append("python")
         run_command.append("main_helper.py")
@@ -208,7 +213,7 @@ def main():
         run_command.extend(["--save_generations_path", generations_path])
         run_command = " ".join(run_command)
 
-        p = subprocess.run(
+        p = subprocess.Popen(
             "; ".join([cuda_command, print_info_command, run_command]),
             shell=True,
         )
