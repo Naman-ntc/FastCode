@@ -10,7 +10,7 @@ To perform inference on a single GPU, use the following script
 CUDA_VISIBLE_DEVICES=0 python main.py \
 --model bigcode/starcoder --use_auth_token \
 --trust_remote_code --tasks humaneval --batch_size 20 --n_samples 20 \
---max_length_generation 1024 --precision bf16 \
+--max_sequence_length 1024 --precision bf16 \
 --save_generations --save_generations_path ./generations/starcoder_humaneval_generations.json
 ```
 The inference loops over the dataset and generates `n_samples` completions for each problem using an inner loop determined by `batch_size`. Hence, for the best performance, `batch_size` should evenly divide the `n_samples`. 
@@ -31,4 +31,4 @@ CUDA_VISIBLE_DEVICES=i python main.py \
 As mentioned above, for ideal performance `batch_size` should evenly divide the `n_samples`. 
 
 ## Performance
-We have observed a good **3x** speedup using `vllm` for inference on `humaneval` (for the `starcoder` model with `max_length_generation` equal to 1024). The difference is significantly more pronounced for longer sequences -- upto **20x** speedup for `max_length_generation` equal to 2048 on the `APPS` dataset.
+We have observed a good **3x** speedup using `vllm` for inference on `humaneval` (for the `starcoder` model with `max_sequence_length` equal to 1024). The difference is significantly more pronounced for longer sequences -- upto **20x** speedup for `max_sequence_length` equal to 2048 on the `APPS` dataset.

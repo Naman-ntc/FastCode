@@ -44,7 +44,7 @@ class Generator:
             task,
             dataset_slice,
             self.tokenizer,
-            max_length=self.args.max_length_generation,
+            max_length=self.args.max_sequence_length,
             n_tasks=n_tasks,
             n_copies=ceil(self.args.n_samples / self.args.batch_size),
             prefix=self.args.prefix,
@@ -55,7 +55,7 @@ class Generator:
             temperature=self.args.temperature,
             top_p=self.args.top_p,
             top_k=self.args.top_k,
-            max_tokens=self.args.max_length_generation,
+            max_tokens=self.args.max_length_generation,  ## proxy updated in utils
             stop=task.stop_words,
         )
 
