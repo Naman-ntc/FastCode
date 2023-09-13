@@ -20,6 +20,8 @@ def main(input_jsons, output_json):
     with open(output_json, "w") as fp:
         json.dump(combined, indent=4, fp=fp)
 
+    return combined
+
 
 if __name__ == "__main__":
     input_jsons = sys.argv[1:-1]

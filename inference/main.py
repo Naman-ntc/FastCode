@@ -254,13 +254,21 @@ def main():
         results = evaluation_results
         all_results = None
 
-    with open(f"model_outputs/evaluation_results_{args.exp_name}.json", "w") as fp:
+    argparse_dict = vars(args)
+    with open(f"{args.base_directory}/args_{args.exp_name}.json", "w") as fp:
+        json.dump(argparse_dict, indent=4, fp=fp)
+
+    with open(
+        f"{args.base_directory}/evaluation_results_{args.exp_name}.json", "w"
+    ) as fp:
         json.dump(results, indent=4, fp=fp)
 
-    if all_results is None:
-        return
-    with open(f"model_outputs/all_evaluation_results_{args.exp_name}.json", "w") as fp:
-        json.dump(all_results, indent=4, fp=fp)
+    if all_results is not None:
+        with open(
+            f"{args.base_directory}/all_evaluation_results_{args.exp_name}.json", "w"
+        ) as fp:
+            json.dump(all_results, indent=4, fp=fp)
+
     return
 
 
