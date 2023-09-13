@@ -121,6 +121,12 @@ def parse_args():
         help="Path for saving the code generations",
     )
     parser.add_argument(
+        "--base_directory",
+        type=str,
+        default="model_outputs",
+        help="(not_used)",
+    )
+    parser.add_argument(
         "--exp_name",
         type=str,
         default="generations.json",

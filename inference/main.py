@@ -116,6 +116,12 @@ def parse_args():
         help="Postprocess model outputs before execution, always on except during generation tests",
     )
     parser.add_argument(
+        "--base_directory",
+        type=str,
+        default="model_outputs",
+        help="Base directory for saving the model outputs",
+    )
+    parser.add_argument(
         "--exp_name",
         type=str,
         default="generations.json",
@@ -174,6 +180,11 @@ def get_references(task, args):
     return references
 
 
+def ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def main():
     args = parse_args()
     task = tasks.get_task(args.task_name)
@@ -196,10 +207,14 @@ def main():
     all_arguments = sys.argv[1:]
     processes = []
     generations_paths = []
+
+    ensure_dir(args.base_directory)
     for gpu_idx in range(args.num_gpus):
-        start = data_size * (gpu_idx // args.num_gpus)
-        end = data_size * ((gpu_idx + 1) // args.num_gpus)
-        generations_path = f"model_outputs/generations_{args.exp_name}_{gpu_idx}.json"
+        start = int(data_size * (gpu_idx / args.num_gpus))
+        end = int(data_size * ((gpu_idx + 1) / args.num_gpus))
+        generations_path = (
+            f"{args.base_directory}/generations_{args.exp_name}_{gpu_idx}.json"
+        )
         cuda_command = f"export CUDA_VISIBLE_DEVICES={gpu_idx}"
         print_info_command = (
             f"echo 'Running on GPU {gpu_idx} with indices {start} to {end}'"
@@ -221,10 +236,11 @@ def main():
         processes.append(p)
         generations_paths.append(generations_path)
 
+    print(f"Started {len(processes)} processes with PIDs {[p.pid for p in processes]}")
     for p in processes:
         p.wait()
 
-    combined_json = f"model_outputs/generations_{args.exp_name}.json"
+    combined_json = f"{args.base_directory}/generations_{args.exp_name}.json"
 
     combined_generations = combine_generations(generations_paths, combined_json)
 
