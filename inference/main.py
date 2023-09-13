@@ -245,7 +245,7 @@ def main():
     combined_generations = combine_generations(generations_paths, combined_json)
 
     evaluation_results = evaluate_generations(
-        task, args.allow_code_execution, combined_generations, references
+        task, args, combined_generations, references
     )
 
     if isinstance(evaluation_results, tuple):
