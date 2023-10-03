@@ -139,6 +139,12 @@ def parse_args():
         help="(not used)",
     )
     parser.add_argument(
+        "--tensor_parallel_size",
+        type=int,
+        default=1,
+        help="(not used)",
+    )
+    parser.add_argument(
         "--allow_code_execution",
         action="store_true",
         help="(not used)",
