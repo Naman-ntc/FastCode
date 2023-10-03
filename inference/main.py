@@ -134,6 +134,12 @@ def parse_args():
         help="Number of GPUs to distribute inference on",
     )
     parser.add_argument(
+        "--tensor_parallel_size",
+        type=int,
+        default=1,
+        help="Number of gpus to shard the model across. Should divide num_gpus evenly",
+    )
+    parser.add_argument(
         "--allow_code_execution",
         action="store_true",
         help="Allow code evaluation to execute external/untrusted Python code on your machine",
@@ -144,10 +150,10 @@ def parse_args():
         help="Only run evaluation, skip generation",
     )
     parser.add_argument(
-        "--eval_file",
+        "--load_gen_file",
         type=str,
         default=None,
-        help="Only run evaluation, skip generation",
+        help="generations file for doing evaluation",
     )
     args = parser.parse_args()
 
@@ -163,6 +169,11 @@ def parse_args():
         len(args.tasks) == 1
     ), f"Only one task is supported at the moment, you gave {args.tasks}"
     args.task_name = args.tasks[0]
+
+    if args.tensor_parallel_size > 1:
+        assert (
+            args.num_gpus % args.tensor_parallel_size == 0
+        ), "num_gpus must be divisible by tensor_parallel_size"
 
     assert args.instruction_tokens is None, "Instruction tokens are not supported yet"
     return args
@@ -210,15 +221,20 @@ def run_generations(args, data_size):
     processes = []
     generations_paths = []
 
-    for gpu_idx in range(args.num_gpus):
-        start = int(data_size * (gpu_idx / args.num_gpus))
-        end = int(data_size * ((gpu_idx + 1) / args.num_gpus))
+    num_divisions = args.num_gpus // args.tensor_parallel_size
+
+    for iter_idx in range(num_divisions):
+        start = int(data_size * (iter_idx / num_divisions))
+        end = int(data_size * ((iter_idx + 1) / num_divisions))
         generations_path = (
-            f"{args.base_directory}/generations_{args.exp_name}_{gpu_idx}.json"
+            f"{args.base_directory}/generations_{args.exp_name}_{iter_idx}.json"
         )
-        cuda_command = f"export CUDA_VISIBLE_DEVICES={gpu_idx}"
+        gpu_list = ",".join(
+            [str(i) for i in range(iter_idx, args.num_gpus, num_divisions)]
+        )
+        cuda_command = f"export CUDA_VISIBLE_DEVICES={gpu_list}"
         print_info_command = (
-            f"echo 'Running on GPU {gpu_idx} with indices {start} to {end}'"
+            f"echo 'Running on GPU {gpu_list} with indices {start} to {end}'"
         )
         run_command = []
         run_command.append("python")
@@ -272,10 +288,10 @@ def main():
 
     if args.eval_mode_only:
         print("Skipping generation")
-        if args.eval_file is None:
+        if args.load_gen_file is None:
             generations_path = f"{args.base_directory}/generations_{args.exp_name}.json"
         else:
-            generations_path = args.eval_file
+            generations_path = args.load_gen_file
         generations, formatted_generations = load_generations(generations_path)
     else:
         generations, formatted_generations = run_generations(args, data_size)

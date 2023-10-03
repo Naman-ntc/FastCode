@@ -149,7 +149,7 @@ def parse_args():
         help="Only run evaluation, skip generation",
     )
     parser.add_argument(
-        "--eval_file",
+        "--load_gen_file",
         type=str,
         default=None,
         help="Only run evaluation, skip generation",
