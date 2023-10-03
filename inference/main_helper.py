@@ -142,7 +142,7 @@ def parse_args():
         "--tensor_parallel_size",
         type=int,
         default=1,
-        help="(not used)",
+        help="used for specifying number of gpus to distribute over",
     )
     parser.add_argument(
         "--allow_code_execution",
@@ -198,7 +198,10 @@ def main():
     datasets.logging.set_verbosity_error()
 
     model = LLM(
-        model=args.model, dtype=args.precision, trust_remote_code=args.trust_remote_code
+        model=args.model,
+        dtype=args.precision,
+        trust_remote_code=args.trust_remote_code,
+        tensor_parallel_size=args.tensor_parallel_size,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(
