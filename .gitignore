@@ -1,4 +1,5 @@
 wandb
+model_outputs
 checkpoints_*
 generations/
 generations*.json

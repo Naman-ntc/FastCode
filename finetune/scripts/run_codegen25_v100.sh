@@ -26,5 +26,4 @@ torchrun --nproc_per_node=8 --rdzv-endpoint localhost:29512 fastcode_monkeypatch
     --do_train \
     --do_eval \
     --deepspeed ds_config_zero3.json \
-    # --fsdp "full_shard auto_wrap" \
-    # --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+h

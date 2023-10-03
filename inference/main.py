@@ -12,7 +12,7 @@ import numpy as np
 import transformers
 from transformers import HfArgumentParser
 
-from combine_generations import main as combine_generations
+from combine_generations import main as combine_generations, format_solution
 from generation_arguments import EvalArguments
 
 sys.path.append("../evaluation/bigcode-evaluation-harness")
@@ -124,7 +124,7 @@ def parse_args():
     parser.add_argument(
         "--exp_name",
         type=str,
-        default="generations.json",
+        default="exp",
         help="Path for saving the code generations",
     )
     parser.add_argument(
@@ -137,6 +137,17 @@ def parse_args():
         "--allow_code_execution",
         action="store_true",
         help="Allow code evaluation to execute external/untrusted Python code on your machine",
+    )
+    parser.add_argument(
+        "--eval_mode_only",
+        action="store_true",
+        help="Only run evaluation, skip generation",
+    )
+    parser.add_argument(
+        "--eval_file",
+        type=str,
+        default=None,
+        help="Only run evaluation, skip generation",
     )
     args = parser.parse_args()
 
@@ -158,11 +169,10 @@ def parse_args():
 
 
 def evaluate_generations(task, args, generations, references):
-    dataset = task.get_dataset()
     if len(generations[0]) > args.n_samples:
         generations = [l[: args.n_samples] for l in generations]
         warnings.warn(
-            f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={self.args.n_samples}"
+            f"Number of tasks wasn't proportional to number of devices, we removed extra predictions to only keep nsamples={args.n_samples}"
         )
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -185,30 +195,21 @@ def ensure_dir(path):
         os.makedirs(path)
 
 
-def main():
-    args = parse_args()
-    task = tasks.get_task(args.task_name)
+def load_generations(generations_path):
+    with open(generations_path) as fp:
+        generations = json.load(fp)
+        print(f"generations loaded, {len(generations)} tasks")
+    formatted_combined = [[format_solution(s) for s in sols] for sols in generations]
+    with open(generations_path.replace(".json", "_formatted.json"), "w") as fp:
+        json.dump(formatted_combined, indent=4, fp=fp)
+    return generations, formatted_combined
 
-    if task.requires_execution and not args.allow_code_execution:
-        from lm_eval.evaluator import _WARNING
 
-        raise ValueError(_WARNING)
-
-    references = get_references(task, args)
-
-    if args.limit is None:
-        print(
-            f"limit not set -- using full dataset with size {len(task.get_dataset())}"
-        )
-        data_size = len(task.get_dataset())
-    else:
-        data_size = args.limit
-
+def run_generations(args, data_size):
     all_arguments = sys.argv[1:]
     processes = []
     generations_paths = []
 
-    ensure_dir(args.base_directory)
     for gpu_idx in range(args.num_gpus):
         start = int(data_size * (gpu_idx / args.num_gpus))
         end = int(data_size * ((gpu_idx + 1) / args.num_gpus))
@@ -242,10 +243,45 @@ def main():
 
     combined_json = f"{args.base_directory}/generations_{args.exp_name}.json"
 
-    combined_generations = combine_generations(generations_paths, combined_json)
+    generations, formatted_generations = combine_generations(
+        generations_paths, combined_json
+    )
+    return generations, formatted_generations
+
+
+def main():
+    args = parse_args()
+    task = tasks.get_task(args.task_name)
+
+    if task.requires_execution and not args.allow_code_execution:
+        from lm_eval.evaluator import _WARNING
+
+        raise ValueError(_WARNING)
+
+    references = get_references(task, args)
+
+    if args.limit is None:
+        print(
+            f"limit not set -- using full dataset with size {len(task.get_dataset())}"
+        )
+        data_size = len(task.get_dataset())
+    else:
+        data_size = args.limit
+
+    ensure_dir(args.base_directory)
+
+    if args.eval_mode_only:
+        print("Skipping generation")
+        if args.eval_file is None:
+            generations_path = f"{args.base_directory}/generations_{args.exp_name}.json"
+        else:
+            generations_path = args.eval_file
+        generations, formatted_generations = load_generations(generations_path)
+    else:
+        generations, formatted_generations = run_generations(args, data_size)
 
     evaluation_results = evaluate_generations(
-        task, args, combined_generations, references
+        task, args, formatted_generations, references
     )
 
     if isinstance(evaluation_results, tuple):

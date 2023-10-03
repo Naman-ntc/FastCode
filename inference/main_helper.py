@@ -143,6 +143,17 @@ def parse_args():
         action="store_true",
         help="(not used)",
     )
+    parser.add_argument(
+        "--eval_mode_only",
+        action="store_true",
+        help="Only run evaluation, skip generation",
+    )
+    parser.add_argument(
+        "--eval_file",
+        type=str,
+        default=None,
+        help="Only run evaluation, skip generation",
+    )
     args = parser.parse_args()
 
     precision_map = {
